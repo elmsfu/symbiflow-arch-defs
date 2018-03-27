@@ -133,7 +133,8 @@ def mux_gen_check_args(makefile):
 
 def mux_gen_deps(makefile):
   """generate build rule for mux generation"""
-  fmt = """{outputs}: {makefile}
+  fmt = """# mux generation rul
+{outputs}: {makefile} {cmd}
 \t@cd {directory} && {cmd} {args}
 {target}: {outputs}
 {target}-clean:
@@ -145,8 +146,31 @@ clean: {target}-clean
   opts = mux_gen_check_args(makefile)
   outfile = opts[MUX_OUTFILE_KEY]
   outputs = '{base}.model.xml {base}.pb_type.xml {base}.sim.v'.format(base=outfile)
-  CMD=os.path.realpath('mux_gen.py')
+  CMD = os.path.realpath('mux_gen.py')
   return fmt.format(target=outfile, outputs=outputs, makefile=makefile, directory=out_dir, cmd=CMD, args=mux_gen_args(opts, out_dir))
+
+def gen_rules_Ntemplate(makefile, name):
+  fmt = """#template expansion rule
+{output}: {template} {makefile} {cmd}
+\t@{cmd} {template} {output}
+templates: {output}
+tempates-clean: {output}
+\t$(RM) {output}
+.PHONY: templates-clean
+clean: templates-clean
+"""
+  CMD = os.path.realpath('n.py')
+  in_dir = os.path.dirname(makefile)
+  out_dir = os.path.dirname(makefile)
+  nvalues = open(makefile,'r').read().split('=')[1].strip().split(' ')
+  res = ''
+  for ftype in ['pb_type.xml', 'model.xml', 'sim.v']:
+    for n in nvalues:
+      template = os.path.join(in_dir, 'ntemplate.N{name}.{ftype}'.format(name=name, ftype=ftype))
+      output = os.path.join(out_dir, '{n}{name}.{ftype}'.format(n=n, name=name, ftype=ftype))
+      res += fmt.format(output=output, template=template, cmd=CMD, makefile=makefile)
+
+  return res
 
 def gen_deps(ff):
   # find mux gen
@@ -158,9 +182,21 @@ def gen_deps(ff):
     ff.write(mux_gen_deps(mux))
   # generate template, verilog, and xml dependency ruls
 
-  templates = [xx for xx in listfiles.listfiles(['..'],[]) if xx.endswith('Makefile.N')]
+  templates = [xx for xx in listfiles.listfiles([listfiles.TOPDIR],[]) if xx.endswith('Makefile.N')]
+
+  gend = set(map(os.path.dirname, templates)).intersection(set([os.path.dirname(x) for x in muxes]))
+  trad = set(map(os.path.dirname, templates)).difference(set([os.path.dirname(x) for x in muxes]))
+  logging.debug('gend %s', gend)
+  logging.debug('trad %s', trad)
   # find and expand N templates
   # generate template, verilog, and xml dependency rules
+
+  # for generated tempaltes, we must infer the file names
+  # gen_rules_Ntemplate(gend)
+
+  for dirname in trad:
+    rules = gen_rules_Ntemplate(os.path.join(dirname, 'Makefile.N'), os.path.basename(dirname)[1:])
+    ff.write(rules)
 
   # find all v files
   # generate verilog and xml dependency rules
