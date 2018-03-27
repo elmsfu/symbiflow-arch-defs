@@ -19,7 +19,7 @@ parser.add_argument(
 
 v_include = re.compile('`include[ ]*"([^"]*)"')
 
-def gen_dep(inputfile):
+def gen_dep(inputfile, fmt=None):
     inputpath = os.path.abspath(inputfile.name)
     inputdir = os.path.dirname(inputpath)
 
@@ -27,7 +27,7 @@ def gen_dep(inputfile):
     matches = set(v_include.findall(inputfile.read()))
     for includefile in matches:
         includefile_path = os.path.abspath(os.path.join(inputdir, includefile))
-        add_dependency(data, inputpath, includefile_path)
+        add_dependency(data, inputpath, includefile_path, fmt)
 
     return data
 
