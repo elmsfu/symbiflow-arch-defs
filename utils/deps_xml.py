@@ -23,7 +23,7 @@ parser.add_argument(
 
 xi_include = re.compile('<xi:include[^>]*href="([^"]*)"')
 
-def gen_deps(inputfile):
+def gen_deps(inputfile, fmt=None):
     inputpath = os.path.abspath(inputfile.name)
     inputdir = os.path.dirname(inputpath)
 
@@ -32,7 +32,7 @@ def gen_deps(inputfile):
     matches = set(xi_include.findall(inputfile.read()))
     for includefile in matches:
         includefile_path = os.path.abspath(os.path.join(inputdir, includefile))
-        add_dependency(data, inputpath, includefile_path)
+        add_dependency(data, inputpath, includefile_path, fmt)
 
     return data
 
