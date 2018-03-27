@@ -10,6 +10,8 @@ import deps_xml
 
 import listfiles
 
+from lib.asserts import assert_eq
+
 MUX_TYPE_KEY = 'MUX_TYPE'
 MUX_SUBCKT_KEY = 'MUX_SUBCKT'
 MUX_COMMENT_KEY = 'MUX_COMMENT'
@@ -149,7 +151,7 @@ clean: {target}-clean
   CMD = os.path.realpath('mux_gen.py')
   return fmt.format(target=outfile, outputs=outputs, makefile=makefile, directory=out_dir, cmd=CMD, args=mux_gen_args(opts, out_dir))
 
-def gen_rules_Ntemplate(makefile, name):
+def gen_rules_Ntemplate(makefile, base):
   fmt = """#template expansion rule
 {output}: {template} {makefile} {cmd}
 \t@{cmd} {template} {output}
@@ -162,12 +164,19 @@ clean: templates-clean
   CMD = os.path.realpath('n.py')
   in_dir = os.path.dirname(makefile)
   out_dir = os.path.dirname(makefile)
-  nvalues = open(makefile,'r').read().split('=')[1].strip().split(' ')
+  values_str = open(makefile,'r').read().strip()
+  eqn = [xx.strip() for xx in values_str.split('=')]
+  assert_eq(eqn[0], 'NTEMPLATE_VALUES')
+  nvalues = eqn[1].split(' ')
+  logging.debug('%s-> %s', values_str, nvalues)
   res = ''
-  for ftype in ['pb_type.xml', 'model.xml', 'sim.v']:
-    for n in nvalues:
-      template = os.path.join(in_dir, 'ntemplate.N{name}.{ftype}'.format(name=name, ftype=ftype))
-      output = os.path.join(out_dir, '{n}{name}.{ftype}'.format(n=n, name=name, ftype=ftype))
+  for n in nvalues:
+    for ftype in ['pb_type.xml', 'model.xml', 'sim.v']:
+      template_name = base.format(N='N')
+      outname = base.format(N=n)
+      template = os.path.join(in_dir, 'ntemplate.{name}.{ftype}'.format(name=template_name, ftype=ftype))
+      output = os.path.join(out_dir, '{name}.{ftype}'.format(name=outname, ftype=ftype))
+      logging.debug('generating rule %s: %s', output, template)
       res += fmt.format(output=output, template=template, cmd=CMD, makefile=makefile)
 
   return res
@@ -177,8 +186,6 @@ def gen_deps(ff):
   muxes = [xx for xx in listfiles.listfiles([listfiles.TOPDIR],[]) if xx.endswith('Makefile.mux')]
   for mux in muxes:
     logging.debug('mux: %s', mux)
-    opts = mux_gen_check_args(mux)
-    logging.debug('opts %s', opts[MUX_OUTFILE_KEY])
     ff.write(mux_gen_deps(mux))
   # generate template, verilog, and xml dependency ruls
 
@@ -186,16 +193,24 @@ def gen_deps(ff):
 
   gend = set(map(os.path.dirname, templates)).intersection(set([os.path.dirname(x) for x in muxes]))
   trad = set(map(os.path.dirname, templates)).difference(set([os.path.dirname(x) for x in muxes]))
-  logging.debug('gend %s', gend)
-  logging.debug('trad %s', trad)
+  logging.debug('generated %s', gend)
+  logging.debug('traditional %s', trad)
   # find and expand N templates
   # generate template, verilog, and xml dependency rules
 
   # for generated tempaltes, we must infer the file names
-  # gen_rules_Ntemplate(gend)
-
   for dirname in trad:
-    rules = gen_rules_Ntemplate(os.path.join(dirname, 'Makefile.N'), os.path.basename(dirname)[1:])
+    # TODO: use tempalte name
+    name = os.path.basename(dirname).replace('N', '{N}')
+    logging.debug('expanding templates %s', name)
+    rules = gen_rules_Ntemplate(os.path.join(dirname, 'Makefile.N'), name)
+    ff.write(rules)
+
+  for dirname in gend:
+    opts = mux_gen_check_args(os.path.join(dirname, 'Makefile.mux'))
+    name = opts[MUX_OUTFILE_KEY].replace('N', '{N}')
+    logging.debug('expanding generated templates %s', name)
+    rules = gen_rules_Ntemplate(os.path.join(dirname, 'Makefile.N'), name)
     ff.write(rules)
 
   # find all v files
