@@ -111,9 +111,7 @@ def deps_makefile(filepath, *, top_dir=TOP_DIR):
 
 def add_dependency(f, from_file, on_file):
     """Record a dependency from file on file."""
-    f.write("""
-$(call add_dependency,{from_file},{on_file})
-""".format(
+    f.write("$(call add_dependency,{from_file},{on_file})\n".format(
     from_file=from_file,
     on_file=on_file,
 ))
