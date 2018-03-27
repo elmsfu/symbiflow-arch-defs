@@ -17,27 +17,24 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "inputfile", type=argparse.FileType('r'), help="Input XML file")
 
-xi_include = re.compile('<xi:include[^>]*href="([^"]*)"', re.IGNORECASE)
+xi_include = re.compile('<xi:include[^>]*href="([^"]*)"')
 
-
-def main(argv):
-    args = parser.parse_args(argv[1:])
-
-    inputpath = os.path.abspath(args.inputfile.name)
+def gen_deps(inputfile):
+    inputpath = os.path.abspath(inputfile.name)
     inputdir = os.path.dirname(inputpath)
 
     data = StringIO()
-    for line in args.inputfile:
-        line = line.strip()
-        if 'xi:include' not in line:
-            continue
 
-        for includefile in xi_include.findall(line):
-            includefile_path = os.path.abspath(
-                os.path.join(inputdir, includefile))
+    matches = set(xi_include.findall(inputfile.read()))
+    for includefile in matches:
+        includefile_path = os.path.abspath(os.path.join(inputdir, includefile))
+        add_dependency(data, inputpath, includefile_path)
 
-            add_dependency(data, inputpath, includefile_path)
+    return data
 
+def main(argv):
+    args = parser.parse_args(argv[1:])
+    data = gen_deps(args.inputfile)
     write_deps(args.inputfile.name, data)
 
 
