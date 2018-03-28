@@ -73,7 +73,7 @@ def mux_gen_args(opts, out_dir):
     args.append('--split-selects {}'.format(opts[MUX_SPLIT_SELECTS_KEY]))
 
   if opts[MUX_OUTPUT_KEY]:
-    args.append('--output {}'.format(opts[MUX_OUTPUT_KEY]))
+    args.append('--name-output {}'.format(opts[MUX_OUTPUT_KEY]))
 
   args.append('--outfilename {}'.format(opts[MUX_OUTFILE_KEY]))
   if opts[MUX_COMMENT_KEY]:
@@ -142,7 +142,7 @@ def mux_gen_deps(makefile):
   """generate build rule for mux generation"""
   fmt = """# mux generation rul
 {outputs}: {makefile} {cmd}
-\t@cd {directory} && {cmd} {args}
+\t$(QUIET)cd {directory} && {cmd} {args}
 MUX_OUTPUTS += {outputs}
 """
   out_dir = os.path.dirname(makefile)
@@ -156,7 +156,7 @@ MUX_OUTPUTS += {outputs}
 def gen_rules_Ntemplate(makefile, base):
   fmt = """#template expansion rule
 {output}: {template} {makefile} {cmd}
-\t@{cmd} {template} {output}
+\t$(QUIET){cmd} {template} {output}
 N_OUTPUTS += {output}
 """
   CMD = os.path.realpath('n.py')
@@ -183,9 +183,9 @@ N_OUTPUTS += {output}
 def gen_rules_v2xml(makefile):
   fmt = """# verilog to xml expansion
 {pb_output}: {simv} {pb_cmd} {makefile}
-\t@{pb_cmd} {extra_args} {pb_args} {simv}
+\t$(QUIET){pb_cmd} {extra_args} {pb_args} {simv}
 {model_output}: {simv} {pb_cmd} {makefile}
-\t@{model_cmd} {extra_args} {model_args} {simv}
+\t$(QUIET){model_cmd} {extra_args} {model_args} {simv}
 V2X_OUTPUTS += {pb_output} {model_output}
 """
   curdir = os.path.dirname(makefile)
