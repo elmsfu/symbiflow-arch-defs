@@ -290,8 +290,16 @@ def gen_deps(ff):
 
   # find all xml files
   # generate xml dependency rules
-  #deps_xml.gen_deps('', '{from_file}: {on_file}\n')
+  pb_files = [xx for xx in listfiles.listfiles([TOPDIR],[]) if xx.endswith(PB_SUFFIX)]
+  pb_files = set(pb_files).difference(v2x_outputs)
+  for pb_file in pb_files:
+    data = deps_xml.gen_deps(open(pb_file, 'r'), '{from_file}: {on_file}\n')
+    logging.debug('pb_type.xml dependency %s\n"%s"', pb_file, data.getvalue())
+    ff.write(data.getvalue())
 
+  # merge-xml files
+
+  # all the cleanup rules
   ff.write(clean_rules())
 
 def main(argv):
