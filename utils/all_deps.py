@@ -43,6 +43,11 @@ mux_gen_keys = [MUX_TYPE_KEY,
 MUX_TYPE_ROUTING = 'routing'
 MUX_TYPE_LOGIC = 'logic'
 
+SIMV_SUFFIX = 'sim.v'
+PB_SUFFIX = 'pb_type.xml'
+MODEL_SUFFIX = 'model.xml'
+EXPAND_SUFFIXES = [SIMV_SUFFIX, PB_SUFFIX, MODEL_SUFFIX]
+
 def mux_gen_args(opts, out_dir):
   args = []
   args.append('--outdir {}'.format(out_dir))
@@ -138,28 +143,21 @@ def mux_gen_deps(makefile):
   fmt = """# mux generation rul
 {outputs}: {makefile} {cmd}
 \t@cd {directory} && {cmd} {args}
-{target}: {outputs}
-{target}-clean:
-\t$(RM) {outputs}
-.PHONY: {target} {target}-clean
-clean: {target}-clean
+MUX_OUTPUTS += {outputs}
 """
   out_dir = os.path.dirname(makefile)
   opts = mux_gen_check_args(makefile)
   outfile = opts[MUX_OUTFILE_KEY]
-  outputs = '{base}.model.xml {base}.pb_type.xml {base}.sim.v'.format(base=outfile)
+  outputs = [os.path.join(out_dir, outfile + '.' + suffix) for suffix in EXPAND_SUFFIXES]
   CMD = os.path.realpath('mux_gen.py')
-  return fmt.format(target=outfile, outputs=outputs, makefile=makefile, directory=out_dir, cmd=CMD, args=mux_gen_args(opts, out_dir))
+  rule = fmt.format(target=outfile, outputs=' '.join(outputs), makefile=makefile, directory=out_dir, cmd=CMD, args=mux_gen_args(opts, out_dir))
+  return rule, outputs
 
 def gen_rules_Ntemplate(makefile, base):
   fmt = """#template expansion rule
 {output}: {template} {makefile} {cmd}
 \t@{cmd} {template} {output}
-templates: {output}
-tempates-clean: {output}
-\t$(RM) {output}
-.PHONY: templates-clean
-clean: templates-clean
+N_OUTPUTS += {output}
 """
   CMD = os.path.realpath('n.py')
   in_dir = os.path.dirname(makefile)
@@ -170,56 +168,131 @@ clean: templates-clean
   nvalues = eqn[1].split(' ')
   logging.debug('%s-> %s', values_str, nvalues)
   res = ''
+  outputs = []
   for n in nvalues:
-    for ftype in ['pb_type.xml', 'model.xml', 'sim.v']:
+    for ftype in EXPAND_SUFFIXES:
       template_name = base.format(N='N')
       outname = base.format(N=n)
       template = os.path.join(in_dir, 'ntemplate.{name}.{ftype}'.format(name=template_name, ftype=ftype))
       output = os.path.join(out_dir, '{name}.{ftype}'.format(name=outname, ftype=ftype))
       logging.debug('generating rule %s: %s', output, template)
       res += fmt.format(output=output, template=template, cmd=CMD, makefile=makefile)
+      outputs.append(output)
+  return res, outputs
 
+def gen_rules_v2xml(makefile):
+  fmt = """# verilog to xml expansion
+{pb_output}: {simv} {pb_cmd} {makefile}
+\t@{pb_cmd} {extra_args} {pb_args} {simv}
+{model_output}: {simv} {pb_cmd} {makefile}
+\t@{model_cmd} {extra_args} {model_args} {simv}
+V2X_OUTPUTS += {pb_output} {model_output}
+"""
+  curdir = os.path.dirname(makefile)
+  dict_args = {}
+  dict_args['makefile'] = makefile
+  dict_args['pb_cmd'] = os.path.realpath('vlog/vlog_to_pbtype.py')
+  dict_args['model_cmd'] = os.path.realpath('vlog/vlog_to_model.py')
+
+  simvlist = [xx for xx in os.listdir(curdir) if xx.endswith(SIMV_SUFFIX)]
+  assert_eq(len(simvlist), 1)
+  dict_args['simv'] = os.path.join(curdir, simvlist[0])
+  base = dict_args['simv'][:-len(SIMV_SUFFIX)]
+
+  extra_args = ''
+  values_str = open(makefile,'r').read().strip()
+  if len(values_str) > 0:
+    eqn = [xx.strip() for xx in values_str.split('=')]
+    assert_eq(eqn[0], 'TOP_MODULE')
+    extra_args += '--top {}'.format(eqn[1])
+  dict_args['extra_args'] = extra_args
+  dict_args['pb_output'] = base + PB_SUFFIX
+  dict_args['model_output'] = base + MODEL_SUFFIX
+  dict_args['pb_args'] = '-o {pb_output}'.format(**dict_args)
+  dict_args['model_args'] = '-o {model_output}'.format(**dict_args)
+
+  rule = fmt.format(**dict_args)
+  outputs = [dict_args['model_output'], dict_args['pb_output']]
+
+  return rule, outputs
+
+def clean_rules():
+  clean_template = """# clean rules from Makefile.{type}
+type{type}: $({type}_OUTPUTS)
+type{type}-clean:
+\t$(RM) $({type}_OUTPUTS)
+clean: {type}-clean
+.PHONY: {type} {type}-clean
+"""
+  res = ''
+  for make_type in ['MUX', 'N', 'V2X']:
+    res += clean_template.format(type=make_type)
   return res
 
 def gen_deps(ff):
   # find mux gen
+  mux_outputs = []
   muxes = [xx for xx in listfiles.listfiles([listfiles.TOPDIR],[]) if xx.endswith('Makefile.mux')]
   for mux in muxes:
     logging.debug('mux: %s', mux)
-    ff.write(mux_gen_deps(mux))
+    rule, outputs = mux_gen_deps(mux)
+    ff.write(rule)
+    mux_outputs += outputs
+
   # generate template, verilog, and xml dependency ruls
-
   templates = [xx for xx in listfiles.listfiles([listfiles.TOPDIR],[]) if xx.endswith('Makefile.N')]
+  v2xml = [xx for xx in listfiles.listfiles([listfiles.TOPDIR],[]) if xx.endswith('Makefile.v2x')]
+  v2x_outputs = []
+  for makefile in v2xml:
+    logging.debug('generating rules for %s', makefile)
+    rules, outputs = gen_rules_v2xml(makefile)
+    ff.write(rules)
+    v2x_outputs += outputs
 
+  # generate and traditional are mutually exclusive
   gend = set(map(os.path.dirname, templates)).intersection(set([os.path.dirname(x) for x in muxes]))
   trad = set(map(os.path.dirname, templates)).difference(set([os.path.dirname(x) for x in muxes]))
   logging.debug('generated %s', gend)
   logging.debug('traditional %s', trad)
-  # find and expand N templates
-  # generate template, verilog, and xml dependency rules
 
-  # for generated tempaltes, we must infer the file names
+  # find and expand N templates
+  N_outputs = []
   for dirname in trad:
-    # TODO: use tempalte name
     name = os.path.basename(dirname).replace('N', '{N}')
     logging.debug('expanding templates %s', name)
-    rules = gen_rules_Ntemplate(os.path.join(dirname, 'Makefile.N'), name)
+    rules, outputs = gen_rules_Ntemplate(os.path.join(dirname, 'Makefile.N'), name)
     ff.write(rules)
+    N_outputs += outputs
 
+  # find and expand N templates that will be generated by mux
+  Ngen_outputs = []
   for dirname in gend:
     opts = mux_gen_check_args(os.path.join(dirname, 'Makefile.mux'))
     name = opts[MUX_OUTFILE_KEY].replace('N', '{N}')
     logging.debug('expanding generated templates %s', name)
-    rules = gen_rules_Ntemplate(os.path.join(dirname, 'Makefile.N'), name)
+    rules, outputs = gen_rules_Ntemplate(os.path.join(dirname, 'Makefile.N'), name)
     ff.write(rules)
+    Ngen_outputs += outputs
 
-  # find all v files
-  # generate verilog and xml dependency rules
+  all_outputs = mux_outputs + v2x_outputs + N_outputs + Ngen_outputs
+  logging.debug('.v outputs: %s', [xx for xx in all_outputs if xx.endswith(SIMV_SUFFIX)])
+
+  # mux output .v files only depend on mux{width} which are not generated
+  # N outputs sim.v depend on the template sim.v on which we can generate dependencies
+
+  # find all v files and add Makefile.mux dirs
+  # generate verilog dependency rules
   #deps_verilog.gen_deps('', '{from_file}: {on_file}\n')
+
+  # generated xml files depend on a .v which should define the correct dependencies
+  # unless there is an xml include that points to a non-generated .xml that sits next to a non-generated sim.v
+  # we should check that all generated xml files only depend on other generated xml files
 
   # find all xml files
   # generate xml dependency rules
   #deps_xml.gen_deps('', '{from_file}: {on_file}\n')
+
+  ff.write(clean_rules())
 
 def main(argv):
   logging.basicConfig(level=logging.DEBUG)
