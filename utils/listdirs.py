@@ -6,89 +6,52 @@ Find all source files in the repo.
 Excludes the files in the top level .excludes file.
 """
 
-import argparse
 import fnmatch
+import logging
 import os.path
-import re
-import subprocess
 import sys
 
-from lib.argparse_extra import ActionStoreBool
+from lib.list_utils import normpath, make_list_argparser, parse_excludes
 
 MYFILE = os.path.abspath(__file__)
 MYDIR = os.path.dirname(MYFILE)
-
 TOPDIR = os.path.abspath(os.path.join(MYDIR, ".."))
 
-parser = argparse.ArgumentParser(
-    description=__doc__,
-    fromfile_prefix_chars='@',
-    prefix_chars='-'
-)
-
-parser.add_argument(
-    '--verbose', '--no-verbose',
-    action=ActionStoreBool, default=os.environ.get('V', '')=='1',
-    help="Print information about files ignored.")
-
-parser.add_argument(
-    '--exclude',
-    nargs="*", default=[],
-    help="Extra exclude patterns to add.")
-
-parser.add_argument(
-    'directory',
-    nargs="*", default=[TOPDIR],
-    help="Directory to list from.")
-
-
-def stderr(*args, **kw):
-    print(*args, **kw, file=sys.stderr, flush=True)
-
-
-def normpath(r, f):
-    return os.path.normpath(os.path.join(r, f))
-
-
-def main(argv):
-    global stderr
-
-    args = parser.parse_args(argv[1:])
-
-    if not args.verbose:
-        stderr = lambda *args, **kw: None
-
-    stderr("Top level directory:", TOPDIR)
-
-    exclude_patterns = args.exclude
-    with open(os.path.join(TOPDIR, ".excludes"), "r") as exclude_file:
-        for line in exclude_file:
-            # Strip comments
-            if '#' in line:
-                line = line[:line.find('#')]
-
-            # Strip whitespace
-            line = line.strip()
-
-            # Skip empty lines
-            if not line:
-                continue
-
-            exclude_patterns.append(line)
-
-    stderr("Exclude patterns:", exclude_patterns)
-    stderr("Will search:", args.directory)
-    for path in args.directory:
-        stderr("Looking in:", path)
-        for root, dirs, files in os.walk(path, topdown=True):
+def listdirs(directory, exclude_patterns):
+    """
+    Generateor that produces directories under given directory
+    """
+    for path in directory:
+        logging.info("Looking in: %s", path)
+        for root, dirs, _ in os.walk(path, topdown=True):
             for pattern in exclude_patterns:
                 # Filter out the directories we want to ignore
                 for d in fnmatch.filter(dirs, pattern):
-                    stderr(" -dir", normpath(root, d))
+                    logging.info(" -dir %s", normpath(root, d))
                     dirs.remove(d)
 
             for d in dirs:
-                print(os.path.normpath(os.path.join(root, d)))
+                yield os.path.normpath(os.path.join(root, d))
+
+
+def main(argv):
+    """
+    List directories
+    """
+    parser = make_list_argparser(TOPDIR)
+    args = parser.parse_args(argv[1:])
+
+    if args.verbose:
+        logging.basicConfig(level=logging.INFO)
+
+    logging.info("Top level directory: %s", TOPDIR)
+
+    exclude_patterns = args.exclude + parse_excludes(os.path.join(TOPDIR, ".excludes"))
+
+    logging.info("Exclude patterns: %s", exclude_patterns)
+    logging.info("Will search: %s", args.directory)
+    for item in listdirs(args.directory, exclude_patterns):
+        print(item)
 
 
 if __name__ == "__main__":
