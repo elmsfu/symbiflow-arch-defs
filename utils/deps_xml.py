@@ -16,36 +16,45 @@ from lib.deps import add_dependency
 from lib.deps import write_deps
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "inputfile",
-    type=argparse.FileType('r'),
-    help="Input XML file")
-parser.add_argument(
-    "--verbose",
-    action=ActionStoreBool, default=os.environ.get('V', '')=='1',
-    help="Be Verbose. Print lots of information.")
+def generate_dependency(inputfile, fmt=None):
+    """
+    Generate dependency for xml input file.
 
-def gen_deps(inputfile, fmt=None):
+    Option format parameter passed to dep.add_dependency()
+    """
     inputpath = os.path.abspath(inputfile.name)
     inputdir = os.path.dirname(inputpath)
 
     data = StringIO()
     tree = ET.parse(inputfile)
-    for el in tree.iter():
-        if str(el.tag).endswith('XInclude}include'):
-          includefile_path = os.path.abspath(os.path.join(inputdir, el.get('href')))
-          logging.info('Adding dep: %s %s', inputpath, includefile_path)
-          add_dependency(data, inputpath, includefile_path, fmt)
+    for elem in tree.iter():
+        if str(elem.tag).endswith('XInclude}include'):
+            includefile_path = os.path.abspath(os.path.join(inputdir, elem.get('href')))
+            logging.info('Adding dep: %s %s', inputpath, includefile_path)
+            add_dependency(data, inputpath, includefile_path, fmt)
 
     return data
 
 def main(argv):
+    """
+    main to generate xml dependencies and write to file
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "inputfile",
+        type=argparse.FileType('r'),
+        help="Input XML file")
+    parser.add_argument(
+        "--verbose",
+        action=ActionStoreBool, default=(os.environ.get('V', '') == '1'),
+        help="Be Verbose. Print lots of information.")
+
+
     args = parser.parse_args(argv[1:])
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
 
-    data = gen_deps(args.inputfile)
+    data = generate_dependency(args.inputfile)
     write_deps(args.inputfile.name, data)
 
 

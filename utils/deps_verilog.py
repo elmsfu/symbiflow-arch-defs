@@ -13,16 +13,14 @@ from io import StringIO
 from lib.deps import add_dependency
 from lib.deps import write_deps
 
+def generate_dependency(inputfile, fmt=None):
+    """
+    Generate dependency for verilog input file.
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "inputfile",
-    type=argparse.FileType('r'),
-    help="Input Verilog file")
+    Option format parameter passed to dep.add_dependency()
+    """
+    v_include = re.compile('`include[ ]*"([^"]*)"')
 
-v_include = re.compile('`include[ ]*"([^"]*)"')
-
-def gen_dep(inputfile, fmt=None):
     inputpath = os.path.abspath(inputfile.name)
     inputdir = os.path.dirname(inputpath)
 
@@ -35,10 +33,19 @@ def gen_dep(inputfile, fmt=None):
     return data
 
 def main(argv):
+    """
+    main to write dependency to file
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "inputfile",
+        type=argparse.FileType('r'),
+        help="Input Verilog file")
+
     args = parser.parse_args(argv[1:])
-    data = gen_dep(args.inputfile)
+    data = generate_dependency(args.inputfile)
     write_deps(args.inputfile.name, data)
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv))
+    main(sys.argv)

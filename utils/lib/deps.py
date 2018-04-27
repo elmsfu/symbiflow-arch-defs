@@ -9,9 +9,9 @@ import os.path
 MY_DIR = os.path.dirname(os.path.abspath(__file__))
 TOP_DIR = os.path.abspath(os.path.join(MY_DIR, "..", ".."))
 
-DEPS_DIR=".deps"
-DEPS_EXT=".d"
-DEPMK_EXT=".dmk"
+DEPS_DIR = ".deps"
+DEPS_EXT = ".d"
+DEPMK_EXT = ".dmk"
 
 
 def makefile_dir(filepath):
@@ -32,7 +32,7 @@ def makefile_dir(filepath):
     >>> makefile_dir("/blah5")
     '/'
     """
-    dirname=os.path.dirname(os.path.normpath(filepath))
+    dirname = os.path.dirname(os.path.normpath(filepath))
     if not dirname or dirname == '.':
         return ''
     if dirname[-1] != '/':
@@ -110,16 +110,23 @@ def deps_makefile(filepath, *, top_dir=TOP_DIR):
 
 
 def add_dependency(f, from_file, on_file, fmt=None):
-    """Record a dependency from file on file."""
+    """
+    Record a dependency from file on file.
+
+    Optional fmt must use {from_file} and {on_file} for formatting result
+    """
     if fmt is None:
-      fmt = "$(call add_dependency,{from_file},{on_file})\n"
+        fmt = "$(call add_dependency,{from_file},{on_file})\n"
     f.write(fmt.format(
-    from_file=from_file,
-    on_file=on_file,
+        from_file=from_file,
+        on_file=on_file,
     ))
 
 
 def write_deps(inputfile_name, data):
+    """
+    write dependencies(data) to correct depenency makefile
+    """
     deps_filename = deps_makefile(inputfile_name)
     with open(deps_filename, "w") as f:
         f.write(data.getvalue())

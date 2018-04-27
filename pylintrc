@@ -4,3 +4,7 @@ enable=bad-indentation,eval-used,invalid-name,missing-docstring,old-style-class,
 [REPORTS]
 output-format=colorized
 reports=no
+
+[BASIC]
+#Good variable names which should always be accepted, separated by a comma
+good-names=i,j,k,ex,Run,_,f
