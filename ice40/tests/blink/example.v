@@ -7,13 +7,17 @@
 `endif
 
 module top (
-	input  clk,
 	output LED2,
 	output LED3,
 	output LED4,
 	output LED5
 );
 
+   SB_HFOSC inthosc (
+  .CLKHFPU(1'b1),
+  .CLKHFEN(1'b1),
+  .CLKHF(clk)
+);
 	localparam BITS = 4;
         localparam LOG2DELAY = $clog2($rtoi(`CLK_MHZ * 1e6));
 
