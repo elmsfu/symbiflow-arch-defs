@@ -139,20 +139,20 @@ ifneq ($(words $(SOURCES)),1)
 ifeq ($(words $(SOURCES)),0)
 $(error "No sources found!")
 endif
-$(error "Multiple sources found! $(SOURCES)")
+#$(error "Multiple sources found! $(SOURCES)")
 endif
 
 
 ##########################################################################
 # Generate BLIF as start of vpr input.
 ##########################################################################
-
-OUT_EBLIF=$(OUT_LOCAL)/$(SOURCE).eblif
+OUT_EBLIF = $(OUT_LOCAL)/hx8kdemo.eblif
+#OUT_EBLIF = $(OUT_LOCAL)/$(SOURCE).eblif
 
 # We have a Verilog file and use a Yosys command to convert it
 ifneq ($(SOURCE_V),)
 $(OUT_EBLIF): $(SOURCE_F) | $(OUT_LOCAL)
-	$(YOSYS) -p "$(YOSYS_SCRIPT)" $<
+	$(YOSYS) -p "$(YOSYS_SCRIPT)" $^
 
 EQUIV_READ = read_verilog $(SOURCE_F)
 

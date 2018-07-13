@@ -41,6 +41,14 @@ $(PROG_TOOL):
 endif
 endif
 
+# iCE40 hx8k-b-env Breakout Board
+# iCE40HX-8k CT256
+ifeq ($(BOARD),hx8k-b-env)
+DEVICE=hx8k
+PACKAGE=ct256
+PROG_TOOL=$(ICEPROG_TOOL)
+endif
+
 # DPControl icevision board
 # iCE40UP5K-SG48
 # ---------------------------------------------
