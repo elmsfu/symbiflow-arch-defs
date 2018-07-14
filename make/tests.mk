@@ -126,22 +126,17 @@ rr_graph.xml: rr_graph.real.xml
 ##########################################################################
 ##########################################################################
 
+ifeq ($(SOURCE_V)$(SOURCE_E),)
 SOURCE_E = $(wildcard *.eblif)
 SOURCE_V = $(filter-out %_tb.v,$(wildcard *.v))
+endif
+
 SOURCE = $(basename $(SOURCE_V)$(SOURCE_E))
 $(info SOURCE = $(SOURCE))
 
-SOURCE_F = $(abspath $(SOURCE_V)$(SOURCE_E))
+SOURCE_FILES = $(abspath $(SOURCE_V)$(SOURCE_E))
 
-SOURCES = $(SOURCE_E) $(SOURCE_V)
-
-ifneq ($(words $(SOURCES)),1)
-ifeq ($(words $(SOURCES)),0)
-$(error "No sources found!")
-endif
-#$(error "Multiple sources found! $(SOURCES)")
-endif
-
+SOURCE = $(firstword $(SOURCE_FILES))
 
 ##########################################################################
 # Generate BLIF as start of vpr input.
@@ -151,19 +146,19 @@ OUT_EBLIF = $(OUT_LOCAL)/hx8kdemo.eblif
 
 # We have a Verilog file and use a Yosys command to convert it
 ifneq ($(SOURCE_V),)
-$(OUT_EBLIF): $(SOURCE_F) | $(OUT_LOCAL)
+$(OUT_EBLIF): $(SOURCE_FILES) | $(OUT_LOCAL)
 	$(YOSYS) -p "$(YOSYS_SCRIPT)" $^
 
-EQUIV_READ = read_verilog $(SOURCE_F)
+EQUIV_READ = read_verilog $(SOURCE_FILES)
 
 endif
 
 # We just have a BLIF file
 ifneq ($(SOURCE_E),)
-$(OUT_EBLIF): $(SOURCE_F) | $(OUT_LOCAL)
+$(OUT_EBLIF): $(SOURCE_FILES) | $(OUT_LOCAL)
 	cp $< $@
 
-EQUIV_READ = read_blif -wideports $(SOURCE_F)
+EQUIV_READ = read_blif -wideports $(SOURCE_FILES)
 endif
 
 # Always keep the eblif output
@@ -187,7 +182,7 @@ ifneq ($(TB),)
 
 TB_F=$(abspath $(TB).v)
 
-$(OUT_LOCAL)/$(TB).vpp: $(TB_F) $(SOURCE_F) | $(OUT_LOCAL)
+$(OUT_LOCAL)/$(TB).vpp: $(TB_F) $(SOURCE_FILES) | $(OUT_LOCAL)
 	iverilog -v -DVCDFILE=\"$(OUT_LOCAL)/$(TB).vcd\" -DCLK_MHZ=0.001 -o $@ $^ $(TOP_DIR)/env/conda/share/yosys/$(CELLS_SIM)
 
 $(OUT_LOCAL)/$(TB).vcd: $(OUT_LOCAL)/$(TB).vpp | $(OUT_LOCAL)
