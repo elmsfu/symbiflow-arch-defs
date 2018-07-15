@@ -131,12 +131,11 @@ SOURCE_E = $(wildcard *.eblif)
 SOURCE_V = $(filter-out %_tb.v,$(wildcard *.v))
 endif
 
-SOURCE = $(basename $(SOURCE_V)$(SOURCE_E))
-$(info SOURCE = $(SOURCE))
-
 SOURCE_FILES = $(abspath $(SOURCE_V)$(SOURCE_E))
 
-SOURCE = $(firstword $(SOURCE_FILES))
+SOURCE = $(basename $(notdir $(firstword $(SOURCE_FILES))))
+$(info SOURCE_FILES = $(SOURCE_FILES))
+$(info SOURCE = $(SOURCE))
 
 ##########################################################################
 # Generate BLIF as start of vpr input.
@@ -225,9 +224,16 @@ VPR_CMD = \
 		--min_route_chan_width_hint $(VPR_ROUTE_CHAN_MINWIDTH_HINT) \
 		--route_chan_width $(VPR_ROUTE_CHAN_WIDTH) \
 		--read_rr_graph $(OUT_RRXML_REAL) \
+		--verbose_sweep on \
+		--allow_unrelated_clustering off \
+		--max_criticality 0.0 \
+		--target_ext_pin_util 0.7 \
+		--max_router_iterations 500 \
+		--routing_failure_predictor off \
 		--clock_modeling_method route \
 		--constant_net_method route
 
+#		--router_algorithm breadth_first \
 
 VPR_ARGS_FILE=$(OUT_LOCAL)/vpr.args
 $(VPR_ARGS_FILE): always-run | $(OUT_LOCAL)
@@ -293,7 +299,7 @@ $(OUT_LOCAL)/top_post_synthesis.blif: $(OUT_ANALYSIS)
 
 # Performing routing generates HLC automatically, nothing to do here
 #-------------------------------------------------------------------------
-OUT_HLC=$(OUT_LOCAL)/top.hlc
+OUT_HLC=$(OUT_LOCAL)/$(SOURCE).hlc
 $(OUT_HLC): $(OUT_ROUTE)
 .PRECIOUS: $(OUT_HLC)
 
