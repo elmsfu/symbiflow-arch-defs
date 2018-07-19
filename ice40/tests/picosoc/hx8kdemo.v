@@ -28,7 +28,7 @@ module hx8kdemo (
 	output flash_csb,
 	output flash_clk,
 	output  flash_io0,
-	input  flash_io1,
+	input  flash_io1//,
 	// inout  flash_io2,
 	// inout  flash_io3,
 
