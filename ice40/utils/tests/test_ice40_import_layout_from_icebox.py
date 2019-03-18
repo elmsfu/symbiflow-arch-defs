@@ -1,5 +1,6 @@
 import unittest
-from ..ice40_import_layout_from_icebox import edge_blocks, tile_type, gen_pinmap
+
+from ..ice40_import_layout_from_icebox import edge_blocks, tile_type, LayoutGenerator
 
 
 def edge_blocks_old(x, y, max_x, max_y):
@@ -97,14 +98,14 @@ class TestPinmap(unittest.TestCase):
 
         pin_locs = {(1,0): {0: "100"}, (0,3): {0: "030", 1:"031"}}
         import lxml.etree as ET
-        xml = ET.Element("test1")
-        pinmap = gen_pinmap(ic, xml, pin_locs)
+        gen = LayoutGenerator("test1", ic)
+        gen.generate(pin_locs)
 
-        self.assertEqual(pinmap, {(3,2,0): "100", (2,5,0): "030", (2,5,1):"031"})
+        self.assertEqual(gen.pin_map, {(3,2,0): "100", (2,5,0): "030", (2,5,1):"031"})
 
-        #print(ET.tostring(xml, pretty_print=True).decode("utf-8"))
+        #print(ET.tostring(gen.layout_xml, pretty_print=True).decode("utf-8"))
         #self.maxDiff = None
-        expected_xml = """<test1>
+        expected_xml = """<fixed_layout height="8" name="test1" width="6">
   <single priority="1" type="EMPTY" x="2" y="2"/>
   <single priority="1" type="EMPTY" x="2" y="0"/>
   <single priority="1" type="EMPTY" x="2" y="1"/>
@@ -161,9 +162,9 @@ class TestPinmap(unittest.TestCase):
   <single priority="1" type="EMPTY" x="4" y="5"/>
   <single priority="1" type="EMPTY" x="5" y="7"/>
   <single priority="1" type="EMPTY" x="4" y="6"/>
-</test1>
+</fixed_layout>
 """
-        self.assertEqual(ET.tostring(xml, pretty_print=True).decode("utf-8"), expected_xml)
+        self.assertEqual(ET.tostring(gen.layout_xml, pretty_print=True).decode("utf-8"), expected_xml)
 
 
 if __name__ == "__main__":
