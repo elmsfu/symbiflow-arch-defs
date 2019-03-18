@@ -4,8 +4,6 @@
 import os.path
 import sys
 
-import icebox
-
 # FIXME: Move this into icebox
 parts = [
     # LP Series (Low Power)
@@ -40,6 +38,8 @@ def versions(part):
 
 
 if __name__ == "__main__":
+    import icebox
+
     for name, pins in icebox.pinloc_db.items():
         part, package = name.split('-')
         if ':' in package:
