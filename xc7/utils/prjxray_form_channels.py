@@ -38,12 +38,13 @@ from prjxray.timing import PvtCorner
 import progressbar
 import tile_splitter.grid
 from lib.rr_graph import points
+from lib.rr_graph.points import NodeClassification
 from lib.rr_graph import tracks
 from lib.rr_graph import graph2
 import datetime
 import os
 import os.path
-from lib.connection_database import NodeClassification, create_tables
+from lib.connection_database import create_tables
 
 from prjxray_db_cache import DatabaseCache
 
@@ -1094,14 +1095,6 @@ FROM
     return track_pkeys
 
 
-def create_track(node, unique_pos):
-    xs, ys = points.decompose_points_into_tracks(unique_pos)
-    tracks_list, track_connections = tracks.make_tracks(xs, ys, unique_pos)
-    tracks_model = tracks.Tracks(tracks_list, track_connections)
-
-    return [node, tracks_list, track_connections, tracks_model]
-
-
 def form_tracks(conn):
     cur = conn.cursor()
 
@@ -1141,7 +1134,7 @@ FROM
   """, (node, )):
                 unique_pos.add((grid_x, grid_y))
 
-            tracks_to_insert.append(create_track(node, unique_pos))
+            tracks_to_insert.append([node] + tracks.create_track(unique_pos))
 
     # Create constant tracks
     vcc_track_to_insert, gnd_track_to_insert = create_constant_tracks(conn)
@@ -1602,8 +1595,8 @@ INSERT INTO node(classification) VALUES (?)
 
     conn.commit()
 
-    return create_track(vcc_node, unique_pos), \
-           create_track(gnd_node, unique_pos)
+    return [vcc_node] + tracks.create_track(unique_pos), \
+           [gnd_node] + tracks.create_track(unique_pos)
 
 
 def main():

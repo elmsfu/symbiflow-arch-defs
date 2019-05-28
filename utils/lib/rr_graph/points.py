@@ -16,7 +16,20 @@ from ..asserts import assert_type
 
 from ..rr_graph import Position, P
 
+
 _NamedPosition = namedtuple("NamedPosition", ["pos", "names"])
+
+class NodeClassification(enum.Enum):
+    """Classification for non-VPR Node type
+    NULL doens't connect anything. eg <2 edges
+    CHANNEL Node with many edges (routing node)
+    EDGES_TO_CHANNEL connects an IPIN/OPIN to a channel
+    EDGE_WITH_MUX - connects an IPIN to an OPIN (eg carry)
+    """
+    NULL = 1
+    CHANNEL = 2
+    EDGES_TO_CHANNEL = 3
+    EDGE_WITH_MUX = 4
 
 
 class NamedPosition(_NamedPosition):

@@ -283,8 +283,10 @@ class Graph(object):
             self.loc_map[key] = loc
 
             for pin_class_idx, pin_class in enumerate(block_type.pin_class):
-                pin_class_node = self.loc_pin_class_map[
-                    (loc.x, loc.y, pin_class_idx)]
+                key = (loc.x, loc.y, pin_class_idx)
+                if key not in self.loc_pin_class_map:
+                    continue
+                pin_class_node = self.loc_pin_class_map[key]
 
                 # Skip building IPIN -> SINK and OPIN -> SOURCE graph if edges
                 # are not required.
@@ -292,8 +294,8 @@ class Graph(object):
                     continue
 
                 for pin in pin_class.pin:
-                    for pin_node, _ in self.loc_pin_map[(loc.x, loc.y,
-                                                         pin.ptc)]:
+                    for pin_node, _ in self.loc_pin_map.get(
+                        (loc.x, loc.y, pin.ptc), []):
                         if pin_class.type == PinType.OUTPUT:
                             self.add_edge(
                                 src_node=pin_class_node,

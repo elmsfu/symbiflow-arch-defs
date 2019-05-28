@@ -19,8 +19,9 @@ import prjxray.db
 import prjxray.tile
 import simplejson as json
 from lib.rr_graph import tracks
+from lib.rr_graph.points import NodeClassification
 from lib.connection_database import (
-    NodeClassification, yield_wire_info_from_node, get_track_model,
+    yield_wire_info_from_node, get_track_model,
     node_to_site_pins, get_pin_name_of_wire
 )
 from prjxray_constant_site_pins import yield_ties_to_wire

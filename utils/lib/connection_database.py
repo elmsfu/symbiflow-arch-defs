@@ -4,13 +4,6 @@ from lib.rr_graph import graph2
 from lib.rr_graph import tracks
 
 
-class NodeClassification(enum.Enum):
-    NULL = 1
-    CHANNEL = 2
-    EDGES_TO_CHANNEL = 3
-    EDGE_WITH_MUX = 4
-
-
 def create_tables(conn):
     """ Create connection database scheme. """
     connection_database_sql_file = os.path.join(

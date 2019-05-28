@@ -2,6 +2,7 @@ from collections import namedtuple
 import pprint
 from enum import Enum
 
+from . import points
 
 class Direction(Enum):
     NO_SIDE = 0
@@ -236,6 +237,13 @@ class Tracks(object):
             if pin_dir != Direction.NO_SIDE:
                 yield (idx, pin_dir)
 
+
+def create_track(unique_pos):
+    xs, ys = points.decompose_points_into_tracks(unique_pos)
+    tracks_list, track_connections = make_tracks(xs, ys, unique_pos)
+    tracks_model = Tracks(tracks_list, track_connections)
+
+    return [tracks_list, track_connections, tracks_model]
 
 def main():
     import doctest
