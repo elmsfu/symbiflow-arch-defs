@@ -55,68 +55,6 @@ from yosys.json import YosysJSON
 sys.path.insert(0, "..")
 from lib import xmlinc
 
-parser = argparse.ArgumentParser(
-    description=__doc__.strip(), formatter_class=argparse.RawTextHelpFormatter
-)
-parser.add_argument(
-    'infiles',
-    metavar='input.v',
-    type=str,
-    nargs='+',
-    help="""\
-One or more Verilog input files, that will be passed to Yosys internally.
-They should be enough to generate a flattened representation of the model,
-so that paths through the model can be determined.
-"""
-)
-parser.add_argument(
-    '--top',
-    help="""\
-Top level module, will usually be automatically determined from the file name
-%.sim.v
-"""
-)
-parser.add_argument(
-    '--includes',
-    help="""\
-Command seperate list of include directories.
-""",
-    default=""
-)
-parser.add_argument('-o', help="""\
-Output filename, default 'model.xml'
-""")
-
-args = parser.parse_args()
-iname = os.path.basename(args.infiles[0])
-
-outfile = "pb_type.xml"
-if "o" in args and args.o is not None:
-    outfile = args.o
-
-yosys.run.add_define("PB_TYPE")
-if args.includes:
-    for include in args.includes.split(','):
-        yosys.run.add_include(include)
-
-vjson = yosys.run.vlog_to_json(args.infiles, flatten=False, aig=False)
-yj = YosysJSON(vjson)
-
-if args.top is not None:
-    top = args.top
-else:
-    wm = re.match(r"([A-Za-z0-9_]+)\.sim\.v", iname)
-    if wm:
-        top = wm.group(1).upper()
-    else:
-        print(
-            "ERROR file name not of format %.sim.v ({}), cannot detect top level. Manually specify the top level module using --top"
-            .format(iname)
-        )
-        sys.exit(1)
-
-tmod = yj.module(top)
-
 INVALID_INSTANCE = -1
 
 
@@ -499,39 +437,72 @@ def make_pb_type(yj, mod):
     return pb_type_xml
 
 
-parser = argparse.ArgumentParser(
-    description=__doc__.strip(), formatter_class=argparse.RawTextHelpFormatter
-)
-parser.add_argument(
-    'infiles',
-    metavar='input.v',
-    type=str,
-    nargs='+',
-    help="""\
-One or more Verilog input files, that will be passed to Yosys internally.
-They should be enough to generate a flattened representation of the model,
-so that paths through the model can be determined.
-"""
-)
-parser.add_argument(
-    '--top',
-    help="""\
-Top level module, will usually be automatically determined from the file name
-%.sim.v
-"""
-)
-parser.add_argument(
-    '--outfile',
-    '-o',
-    type=argparse.FileType('w'),
-    default="pb_type.xml",
-    help="""\
-Output filename, default 'model.xml'
-"""
-)
-
-
 def main(args):
+    parser = argparse.ArgumentParser(
+        description=__doc__.strip(),
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument(
+        'infiles',
+        metavar='input.v',
+        type=str,
+        nargs='+',
+        help="""\
+    One or more Verilog input files, that will be passed to Yosys internally.
+    They should be enough to generate a flattened representation of the model,
+    so that paths through the model can be determined.
+    """
+    )
+    parser.add_argument(
+        '--top',
+        help="""\
+    Top level module, will usually be automatically determined from the file name
+    %.sim.v
+    """
+    )
+    parser.add_argument(
+        '--includes',
+        help="""\
+    Command seperate list of include directories.
+    """,
+        default=""
+    )
+    parser.add_argument(
+        '-o', help="""\
+    Output filename, default 'model.xml'
+    """
+    )
+
+    args = parser.parse_args()
+    iname = os.path.basename(args.infiles[0])
+
+    outfile = "pb_type.xml"
+    if "o" in args and args.o is not None:
+        outfile = args.o
+
+    yosys.run.add_define("PB_TYPE")
+    if args.includes:
+        for include in args.includes.split(','):
+            yosys.run.add_include(include)
+
+    vjson = yosys.run.vlog_to_json(args.infiles, flatten=False, aig=False)
+    yj = YosysJSON(vjson)
+
+    if args.top is not None:
+        top = args.top
+    else:
+        wm = re.match(r"([A-Za-z0-9_]+)\.sim\.v", iname)
+        if wm:
+            top = wm.group(1).upper()
+        else:
+            print(
+                "ERROR file name not of format %.sim.v ({}), cannot detect top level. Manually specify the top level module using --top"
+                .format(iname)
+            )
+            sys.exit(1)
+
+    tmod = yj.module(top)
+
     iname = os.path.basename(args.infiles[0])
 
     yosys.run.add_define("PB_TYPE")
