@@ -106,7 +106,7 @@ def strip_name(name):
     return name
 
 
-def make_pb_content(yj, mod, xml_parent, mod_pname, is_submode=False):
+def make_pb_content(yj, mod, xml_parent, mod_pname, outfile, is_submode=False):
     """Build the pb_type content - child pb_types, timing and direct interconnect,
     but not IO. This may be put directly inside <pb_type>, or inside <mode>."""
 
@@ -355,7 +355,7 @@ def make_pb_content(yj, mod, xml_parent, mod_pname, is_submode=False):
                 xml_mat.text = mat
 
 
-def make_pb_type(yj, mod):
+def make_pb_type(yj, mod, infiles, outfile):
     """Build the pb_type for a given module. mod is the YosysModule object to
     generate."""
 
@@ -400,7 +400,7 @@ def make_pb_type(yj, mod):
         "pb_type", pb_xml_attrs, nsmap={'xi': xmlinc.xi_url}
     )
     # Process IOs
-    clocks = yosys.run.list_clocks(args.infiles, mod.name)
+    clocks = yosys.run.list_clocks(infiles, mod.name)
     for name, width, bits, iodir in mod.ports:
         ioattrs = {"name": name, "num_pins": str(width)}
         pclass = mod.net_attr(name, "PORT_CLASS")
@@ -422,7 +422,7 @@ def make_pb_type(yj, mod):
             # Rerun Yosys with mode parameter
             mode_yj = YosysJSON(
                 yosys.run.vlog_to_json(
-                    args.infiles,
+                    infiles,
                     flatten=False,
                     aig=False,
                     mode=smode,
@@ -430,14 +430,14 @@ def make_pb_type(yj, mod):
                 )
             )
             mode_mod = mode_yj.module(mod.name)
-            make_pb_content(yj, mode_mod, mode_xml, mod_pname, True)
+            make_pb_content(yj, mode_mod, mode_xml, mod_pname, outfile, True)
     else:
-        make_pb_content(yj, mod, pb_type_xml, mod_pname)
+        make_pb_content(yj, mod, pb_type_xml, mod_pname, outfile)
 
     return pb_type_xml
 
 
-def main(args):
+def main():
     parser = argparse.ArgumentParser(
         description=__doc__.strip(),
         formatter_class=argparse.RawTextHelpFormatter
@@ -461,24 +461,24 @@ def main(args):
     """
     )
     parser.add_argument(
-        '--includes',
-        help="""\
-    Command seperate list of include directories.
-    """,
-        default=""
+        '--outfile',
+        '-o',
+        type=argparse.FileType('w'),
+        default="pb_type.xml",
+        help="""Output filename, default 'model.xml'"""
     )
     parser.add_argument(
-        '-o', help="""\
-    Output filename, default 'model.xml'
-    """
+        '--includes',
+        help="""Command seperate list of include directories.""",
+        default=""
     )
 
     args = parser.parse_args()
     iname = os.path.basename(args.infiles[0])
 
     outfile = "pb_type.xml"
-    if "o" in args and args.o is not None:
-        outfile = args.o
+    if "outfile" in args and args.outfile is not None:
+        outfile = args.outfile
 
     yosys.run.add_define("PB_TYPE")
     if args.includes:
@@ -505,26 +505,7 @@ def main(args):
 
     iname = os.path.basename(args.infiles[0])
 
-    yosys.run.add_define("PB_TYPE")
-    vjson = yosys.run.vlog_to_json(args.infiles, flatten=False, aig=False)
-    yj = YosysJSON(vjson)
-
-    if args.top is not None:
-        top = args.top
-    else:
-        wm = re.match(r"([A-Za-z0-9_]+)\.sim\.v", iname)
-        if wm:
-            top = wm.group(1).upper()
-        else:
-            print(
-                "ERROR file name not of format %.sim.v ({}), cannot detect top level. Manually specify the top level module using --top"
-                .format(iname)
-            )
-            sys.exit(1)
-
-    tmod = yj.module(top)
-
-    pb_type_xml = make_pb_type(yj, tmod)
+    pb_type_xml = make_pb_type(yj, tmod, args.infiles, outfile)
 
     args.outfile.write(
         ET.tostring(
@@ -539,5 +520,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    args = parser.parse_args()
-    sys.exit(main(args))
+    sys.exit(main())
