@@ -238,8 +238,8 @@ class Tracks(object):
                 yield (idx, pin_dir)
 
 
-def create_track(unique_pos):
-    xs, ys = points.decompose_points_into_tracks(unique_pos)
+def create_track(unique_pos, right_only=False, right_top=False):
+    xs, ys = points.decompose_points_into_tracks(unique_pos, right_only=right_only, right_top=right_top)
     tracks_list, track_connections = make_tracks(xs, ys, unique_pos)
     tracks_model = Tracks(tracks_list, track_connections)
 

@@ -201,9 +201,18 @@ def create_tracks(nets):
     """
 
     for idx, net in nets.items():
+        if idx==1849:
+            print(1)
         pts = list((pos.x, pos.y) for pos in net)
         unique_pts = list(set(pts))
-        _, _, model = tracks.create_track(unique_pts)
+
+        if 0:
+            # xs, ys = points.decompose_points_into_tracks(unique_pos, right_only=right_only)
+            # tracks_list, track_connections = make_tracks(xs, ys, unique_pos)
+            conns, segs = points.decompose_into_straight_lines(net)
+            tracks_model = Tracks(tracks_list, track_connections)
+        else:
+            _, _, model = tracks.create_track(unique_pts, right_top=True)
 
         if len(pts) < 2:
             node_class = NodeClassification.NULL
@@ -226,7 +235,7 @@ def connect_tracks(graph, nets):
     nodes = []
     segment_id = graph.get_delayless_switch_id()
 
-    for ice_node in create_tracks(nets):
+    for jj, ice_node in enumerate(create_tracks(nets)):
         nodes.append(ice_node)
         model = ice_node.track_model
         for ii, track in enumerate(model.tracks):
@@ -253,10 +262,20 @@ def connect_tracks(graph, nets):
             )
     return nodes
 
-def _find_track_by_position(tracks, pos):
-    return [track for track in tracks if track.x == pos.x and track.y == pos.y]
+def _find_track_by_position(node, pos):
+    ids = []
+    for ii, track in  enumerate(node.track_model.tracks):
+        if pos.x >= track.x_low and pos.x <= track.x_high and pos.y >= track.y_low and pos.y <= track.y_high:
+            ids.append(node.track_ids[ii])
+    return ids
 
-def create_edges(nets, switches, nodes):
+def _find_net_name(net, pos):
+    nps = [xx for xx in net if xx.x == pos.x and xx.y == pos.y]
+    if len(nps) != 1:
+        print("Expected to find 1 net (found {}) at the position {}".format(len(nps), pos))
+    return nps[0].names[0]
+
+def create_edges(graph, nets, switches, nodes):
     """Create edges from icestorm buffer and routing switches
 
     Edges shall be compatible with serialize_edges in rr_graph_xml
@@ -279,18 +298,26 @@ def create_edges(nets, switches, nodes):
     for switch in switches:
         dst = switch.dst_net
         pos = switch.pos
+        dst_nodes = _find_track_by_position(nodes[dst], pos)
+
         for bits, src in switch.switch_map.items():
-            dst_nodes = _find_track_by_position(nodes[dst].track_model.tracks, pos)
-            src_nodes = _find_track_by_position(nodes[src].track_model.tracks, pos)
-            assert len(dst_nodes) == 1 and len(src_nodes) == 1,\
-                "Expected only a single dst({}) and src({}) node".format(len(dst_nodes),
-                                                                         len(src_nodes))
+            src_nodes = _find_track_by_position(nodes[src], pos)
+            # assert len(dst_nodes) == 1 and len(src_nodes) == 1,\
+            #     "Expected only a single dst({}) and src({}) node".format(len(dst_nodes),
+            #                                                              len(src_nodes))
+
+            dst_node = dst_nodes[0]
+            src_node = src_nodes[0]
+            dst_name = _find_net_name(nets[dst], pos)
+            src_name = _find_net_name(nets[src], pos)
 
             # TODO: get fasm feature "type_Xx_Yy.sw_type.dst.src"
             tile_type = "LOGIC"
-            feature_name = "{}_X{}_Y{}.{}.{}.{}".format(tile_type, x, y, sw_type, dst_name, src_name)
+
+            feature_name = "{}_X{}_Y{}.{}.{}.{}".format(tile_type, pos.x, pos.y, switch.sw_type, dst_name, src_name)
+            switch_id = graph.get_switch_id("buffer")
             yield (
-                src_node, sink_node, switch_id,
+                src_node, dst_node, switch_id,
                 (('fasm_features', feature_name)), )
 
 
@@ -308,19 +335,9 @@ def import_routing(graph, nets, switches):
     # Convert to VPR nodes and shorts
     nodes = connect_tracks(graph, nets)
 
-    edges = create_edges(nets, switches, nodes)
-
-    """
-    graph2.Channels(
-        chan_width_max=chan_width_max,
-        x_min=x_min,
-        y_min=y_min,
-        x_max=x_max,
-        y_max=y_max,
-        x_list=x_list,
-        y_list=y_list,
-    )
-    """
+    edges = create_edges(graph, nets, switches, nodes)
+    for edge in edges:
+        graph.add_edge(edge[0], edge[1], edge[2], edge[3][0], edge[3][1])
 
     return nodes, edges
 

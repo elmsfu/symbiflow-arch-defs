@@ -819,7 +819,7 @@ class Track(object):
 
 
 def decompose_points_into_tracks(
-        points, grid_width=None, grid_height=None, right_only=False
+        points, grid_width=None, grid_height=None, right_only=False, right_top=False
 ):
     """ This function takes a bag of points and returns a set of x lines and
         y lines that cover all points, and all lines touch each other.
@@ -1027,6 +1027,12 @@ def decompose_points_into_tracks(
     x = [68]
     y = [52]
 
+    >>> pos = [(1, 0), (1, 1), (2, 1)]
+    >>> ret = decompose_points_into_tracks(pos, right_top=True)
+    >>> print_tracks(ret)
+    x = [1]
+    y = [1]
+
     """
 
     xs, ys = zip(*points)
@@ -1087,20 +1093,33 @@ def decompose_points_into_tracks(
 
         return False
 
+    allow_y = True
+    allow_left = True
+    allow_bottom = True
+
+    if right_only:
+        allow_left = False
+        allow_y = False
+        allow_bottom = False
+
+    if right_top:
+        allow_left = False
+        allow_bottom = False
+
     for p in points:
         # No points in corner
         assert not is_corner_point(p), p
 
         if on_x_track(p) and p.x in x_tracks:
             # The x-1 connection is for left pins.
-            if p.x > 0 and not right_only:
+            if p.x > 0 and allow_left:
                 x_tracks[p.x - 1].add_point(p)
             x_tracks[p.x].add_point(p)
 
         # If all pins are on the right, then the y_tracks are used for cross
         # bar only, and points are not connected.
-        if on_y_track(p) and not right_only and p.y in y_tracks:
-            if p.y > 0:
+        if on_y_track(p) and allow_y and p.y in y_tracks:
+            if p.y > 0 and allow_bottom:
                 y_tracks[p.y - 1].add_point(p)
             y_tracks[p.y].add_point(p)
 
@@ -1177,7 +1196,7 @@ def decompose_points_into_tracks(
 
             on_a_track = on_a_track or p.y in y_tracks
 
-        assert on_a_track, p
+        assert on_a_track, "{} is not on a track".format(p)
 
     return list(x_tracks.keys()), list(y_tracks.keys())
 
