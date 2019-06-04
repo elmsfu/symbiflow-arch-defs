@@ -201,8 +201,7 @@ def create_tracks(nets):
     """
 
     for idx, net in nets.items():
-        if idx==1849:
-            print(1)
+        # TODO: add offset for padding cells
         pts = list((pos.x, pos.y) for pos in net)
         unique_pts = list(set(pts))
 
@@ -225,6 +224,7 @@ def create_tracks(nets):
             else:
                 node_class = NodeClassification.EDGES_TO_CHANNEL
 
+        # TODO: check if we also need a link to a source/sink node
         yield IceNode(node_class, model, [])
 
 
@@ -318,7 +318,7 @@ def create_edges(graph, nets, switches, nodes):
             switch_id = graph.get_switch_id("buffer")
             yield (
                 src_node, dst_node, switch_id,
-                (('fasm_features', feature_name)), )
+                [('fasm_features', feature_name), ('chip_db_id', str(switch))], )
 
 
 def import_routing(graph, nets, switches):
@@ -337,7 +337,7 @@ def import_routing(graph, nets, switches):
 
     edges = create_edges(graph, nets, switches, nodes)
     for edge in edges:
-        graph.add_edge(edge[0], edge[1], edge[2], edge[3][0], edge[3][1])
+        graph.add_edge(edge[0], edge[1], edge[2], edge[3])
 
     return nodes, edges
 

@@ -409,17 +409,18 @@ class Graph(object):
         return self.loc_pin_map[(loc[0], loc[1], pin_idx)]
 
     def _create_edge(
-            self, src_node, sink_node, switch_id, name=None, value=''
+            self, src_node, sink_node, switch_id, metadata_list=None
     ):
         assert src_node >= 0 and src_node < len(self.nodes), src_node
         assert sink_node >= 0 and sink_node < len(self.nodes), sink_node
         assert switch_id >= 0 and switch_id < len(self.switches), switch_id
 
-        if name is not None:
+        if metadata_list is not None:
             metadata = [
                 NodeMetadata(
-                    name=name, x_offset=0, y_offset=0, z_offset=0, value=value
+                    name=x[0], x_offset=0, y_offset=0, z_offset=0, value=x[1]
                 )
+                for x in metadata_list
             ]
         else:
             metadata = None
@@ -431,7 +432,7 @@ class Graph(object):
             metadata=metadata
         )
 
-    def add_edge(self, src_node, sink_node, switch_id, name=None, value=''):
+    def add_edge(self, src_node, sink_node, switch_id, metadata_list=None):
         """Add Edge to the graph
 
         Appends a new edge to the graph and retruns the index in the edges list
@@ -441,8 +442,7 @@ class Graph(object):
                 src_node=src_node,
                 sink_node=sink_node,
                 switch_id=switch_id,
-                name=name,
-                value=value
+                metadata_list=metadata_list
             )
         )
 
