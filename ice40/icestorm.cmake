@@ -85,10 +85,9 @@ function(icestorm_setup)
       --router_init_wirelength_abort_threshold 2
       --congested_routing_iteration_threshold 0.8
     RR_PATCH_TOOL
-      ${symbiflow-arch-defs_SOURCE_DIR}/ice40/utils/ice40_import_routing_from_icebox.py
+      ${symbiflow-arch-defs_SOURCE_DIR}/ice40/utils/ice40_import_routing.py
     RR_PATCH_CMD "\${QUIET_CMD} \${CMAKE_COMMAND} -E env ${PYPATH_ARG} \
     \${PYTHON3} \${RR_PATCH_TOOL} \
-    --device=\${DEVICE} \
     --read_rr_graph \${OUT_RRXML_VIRT} \
     --write_rr_graph \${OUT_RRXML_REAL}"
     PLACE_TOOL

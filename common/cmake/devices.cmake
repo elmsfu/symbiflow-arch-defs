@@ -382,6 +382,8 @@ function(DEFINE_DEVICE)
   #   ARCH <arch>
   #   DEVICE_TYPE <device_type>
   #   PACKAGES <list of packages>
+  #   [RR_PATCH_DEPS deps]
+  #   [RR_PATCH_EXTRA_ARGS args]
   #   )
   # ~~~
   #

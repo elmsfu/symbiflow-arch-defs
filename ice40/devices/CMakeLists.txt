@@ -13,11 +13,16 @@ function(DEFINE_ICE40_DEVICE)
     ${ARGN}
   )
 
+  string(SUBSTRING ${DEFINE_ICE40_DEVICE_DEVICE} 2 4 DEVICE_MODE)
+  set(CHIPDB ${ICEBOX_SHARE}/chipdb-${DEVICE_MODE}.txt)
+
   define_device(
     DEVICE ${DEFINE_ICE40_DEVICE_DEVICE}
     ARCH ice40
     DEVICE_TYPE ${DEFINE_ICE40_DEVICE_DEVICE_TYPE}
     PACKAGES ${DEFINE_ICE40_DEVICE_PACKAGES}
+    RR_PATCH_DEPS intervaltree progressbar2
+    RR_PATCH_EXTRA_ARGS --chip_db ${CHIPDB}
   )
 
   add_icebox_layouts(
