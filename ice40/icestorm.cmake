@@ -80,10 +80,16 @@ function(icestorm_setup)
     DEVICE_FULL_TEMPLATE \${DEVICE}-\${PACKAGE}
     VPR_ARCH_ARGS
       --clock_modeling route
-      --allow_unrelated_clustering off
-      --target_ext_pin_util 0.7
-      --router_init_wirelength_abort_threshold 2
-      --congested_routing_iteration_threshold 0.8
+      --place_algorithm bounding_box
+      --enable_timing_computations off
+      --allow_unrelated_clustering on
+      --clustering_pin_feasibility_filter off
+      --disable_check_route on
+      --strict_checks off
+      #--allow_unrelated_clustering off
+      #--target_ext_pin_util 0.7
+      #--router_init_wirelength_abort_threshold 2
+      #--congested_routing_iteration_threshold 0.8
     RR_PATCH_TOOL
       ${symbiflow-arch-defs_SOURCE_DIR}/ice40/utils/ice40_import_routing.py
     RR_PATCH_CMD "\${QUIET_CMD} \${CMAKE_COMMAND} -E env ${PYPATH_ARG} \
