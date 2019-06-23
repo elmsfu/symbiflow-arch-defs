@@ -417,9 +417,7 @@ class Graph(object):
 
         if metadata_list is not None:
             metadata = [
-                NodeMetadata(
-                    name=x[0], x_offset=0, y_offset=0, z_offset=0, value=x[1]
-                )
+                x
                 for x in metadata_list
             ]
         else:
@@ -588,7 +586,7 @@ class Graph(object):
                         y_high=chan,
                     ),
                     segment_id=pad_segment,
-                    capacity=0,
+                    capacity=1,
                     timing=None,
                     ptc=ptc
                 )
@@ -606,7 +604,7 @@ class Graph(object):
                         y_high=end,
                     ),
                     segment_id=pad_segment,
-                    capacity=0,
+                    capacity=1,
                     timing=None,
                     ptc=ptc
                 )

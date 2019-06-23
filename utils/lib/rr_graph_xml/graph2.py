@@ -100,8 +100,8 @@ def serialize_edges(xf, edges):
                 if metadata is not None and len(metadata) > 0:
                     with element('metadata'):
                         for m in metadata:
-                            with element('meta', name=m.name):
-                                write(m.value)
+                            with element('meta', name=m[0]):
+                                write(m[1])
 
 
 def enum_from_string(enum_type, s):

@@ -336,14 +336,14 @@ WHERE
                     src_node=node_mapping[track_node],
                     sink_node=pin_node[0][0],
                     switch_id=delayless_switch,
-                    name='synth_{}_{}'.format(tile_name, pin['wire']),
+                    metadata_list=( ('synth_{}_{}'.format(tile_name, pin['wire']),None,) ),
                 )
             elif pin['port_type'] in ['VCC', 'GND', 'output']:
                 graph.add_edge(
                     src_node=pin_node[0][0],
                     sink_node=node_mapping[track_node],
                     switch_id=delayless_switch,
-                    name='synth_{}_{}'.format(tile_name, pin['wire']),
+                    metadata_list=( ('synth_{}_{}'.format(tile_name, pin['wire']),None,) ),
                 )
             else:
                 assert False, pin
@@ -470,7 +470,7 @@ FROM
                     (('fasm_features', check_feature(pip_name)), )
                 )
             else:
-                yield (src_node, sink_node, switch_id, ())
+                yield (src_node, sink_node, switch_id, None)
 
             if idx % 1024 == 0:
                 bar.update(idx)

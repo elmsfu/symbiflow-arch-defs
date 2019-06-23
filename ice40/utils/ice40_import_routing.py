@@ -33,7 +33,7 @@ class IceSwitch(namedtuple("IceSwitch", "sw_type pos dst_net bits switch_map")):
     """
 
 
-class IceNode(namedtuple("IceNode", "node_class track_model track_ids")):
+class IceNode(namedtuple("IceNode", "node_class idx track_model track_ids")):
     """Represent an icestorm net as an rr_graph node classification and track model.
     The track_ids capture the ids of the VPR nodes corresponding to the track segments
     """
@@ -225,7 +225,7 @@ def create_tracks(nets):
                 node_class = NodeClassification.EDGES_TO_CHANNEL
 
         # TODO: check if we also need a link to a source/sink node
-        yield IceNode(node_class, model, [])
+        yield IceNode(node_class, idx, model, [])
 
 
 
@@ -243,7 +243,7 @@ def connect_tracks(graph, nets):
                             segment_id,
                             capacity=1,
                             timing=None,
-                            name=None,
+                            name="original node {}".format(ice_node.idx),
                             ptc=None,
                             # direction=NodeDirection.BI_DIR
                             )
