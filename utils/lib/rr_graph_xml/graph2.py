@@ -101,7 +101,7 @@ def serialize_edges(xf, edges):
                     with element('metadata'):
                         for m in metadata:
                             with element('meta', name=m.name):
-                                write(value)
+                                write(m.value)
 
 
 def enum_from_string(enum_type, s):
