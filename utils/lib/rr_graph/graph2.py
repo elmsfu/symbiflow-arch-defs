@@ -402,11 +402,16 @@ class Graph(object):
         return '{}.{}[{}]'.format(tile_type, port_name, pin_idx)
 
     def get_nodes_for_pin(self, loc, pin_name):
+        """Look up a tile pin by location and pin name.
+
+        Return (VPR node ID, side, IN/OUT)
+        """
         block_type_id, pin_class_idx, pin_idx = self.pin_name_map[pin_name]
         grid_loc = self.loc_map[loc]
         assert grid_loc.block_type_id == block_type_id
 
-        return self.loc_pin_map[(loc[0], loc[1], pin_idx)]
+        pin_type = self.block_types[block_type_id].pin_class[pin_class_idx].type
+        return self.loc_pin_map[(loc[0], loc[1], pin_idx)], pin_type
 
     def _create_edge(
             self, src_node, sink_node, switch_id, metadata_list=None

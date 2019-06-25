@@ -14,9 +14,11 @@ from lib.rr_graph import Position
 from lib.rr_graph import points
 from lib.rr_graph import tracks
 from lib.rr_graph.points import NamedPosition, NodeClassification
-import lib.rr_graph.graph2
+from lib.rr_graph.graph2 import PinType
 import lib.rr_graph_xml.graph2 as xml_graph2
 from lib.rr_graph_xml.utils import read_xml_file
+
+from ice40_feature import Feature, IceDbEntry
 
 import datetime
 now = datetime.datetime.now
@@ -202,7 +204,7 @@ def create_tracks(nets):
 
     for idx, net in nets.items():
         # TODO: add offset for padding cells
-        pts = list((pos.x, pos.y) for pos in net)
+        pts = list((pos.x + 2, pos.y + 2) for pos in net)
         unique_pts = list(set(pts))
 
         if 0:
@@ -224,16 +226,101 @@ def create_tracks(nets):
             else:
                 node_class = NodeClassification.EDGES_TO_CHANNEL
 
-        # TODO: check if we also need a link to a source/sink node
         yield IceNode(node_class, idx, model, [])
 
+def gen_mapped_names():
+    """
+    """
+    mapped_names = {}
+"""
+    for block_type in graph.block_types:
+        for pin_class in block_type.pin_class:
+            assert (len(pin_class.pin) == 1)
+            pin_class.pin[0].name
+            # convert bracketed number to underscore number (eg D_IN[1] -> D_IN_1)
+            # convert "." -> "/"
+            #
+            RAM -> ram
+            PIO -> io
+            DSP -> dsp
+            PLB. -> ""
 
+            # may need to drop 0 index (eg PLB.lutff_4/out[0] -> lutff_4/out)
+
+"""
 
 def connect_tracks(graph, nets):
     """
     """
     nodes = []
     segment_id = graph.get_delayless_switch_id()
+
+    mapped_names = {
+        "io_0/D_IN_0": "PIO[0].D_IN[0]",
+        "io_0/D_IN_1": "PIO[0].D_IN[1]",
+        "io_1/D_IN_0": "PIO[1].D_IN[0]",
+        "io_1/D_IN_1": "PIO[1].D_IN[1]",
+        "io_0/D_OUT_0": "PIO[0].D_OUT[0]",
+        "io_0/D_OUT_1": "PIO[0].D_OUT[1]",
+        "io_1/D_OUT_0": "PIO[1].D_OUT[0]",
+        "io_1/D_OUT_1": "PIO[1].D_OUT[1]",
+
+        "carry_in": "PLB.FCOUT[0]",
+        "carry_in_mux": "PLB.FCIN[0]",
+
+        "lutff_0/in_0": "PLB.lutff_0/in[0]",
+        "lutff_0/in_1": "PLB.lutff_0/in[1]",
+        "lutff_0/in_2": "PLB.lutff_0/in[2]",
+        "lutff_0/in_3": "PLB.lutff_0/in[3]",
+
+        "lutff_1/in_0": "PLB.lutff_1/in[0]",
+        "lutff_1/in_1": "PLB.lutff_1/in[1]",
+        "lutff_1/in_2": "PLB.lutff_1/in[2]",
+        "lutff_1/in_3": "PLB.lutff_1/in[3]",
+
+        "lutff_2/in_0": "PLB.lutff_2/in[0]",
+        "lutff_2/in_1": "PLB.lutff_2/in[1]",
+        "lutff_2/in_2": "PLB.lutff_2/in[2]",
+        "lutff_2/in_3": "PLB.lutff_2/in[3]",
+
+        "lutff_3/in_0": "PLB.lutff_3/in[0]",
+        "lutff_3/in_1": "PLB.lutff_3/in[1]",
+        "lutff_3/in_2": "PLB.lutff_3/in[2]",
+        "lutff_3/in_3": "PLB.lutff_3/in[3]",
+
+        "lutff_4/in_0": "PLB.lutff_4/in[0]",
+        "lutff_4/in_1": "PLB.lutff_4/in[1]",
+        "lutff_4/in_2": "PLB.lutff_4/in[2]",
+        "lutff_4/in_3": "PLB.lutff_4/in[3]",
+
+        "lutff_5/in_0": "PLB.lutff_5/in[0]",
+        "lutff_5/in_1": "PLB.lutff_5/in[1]",
+        "lutff_5/in_2": "PLB.lutff_5/in[2]",
+        "lutff_5/in_3": "PLB.lutff_5/in[3]",
+
+        "lutff_6/in_0": "PLB.lutff_6/in[0]",
+        "lutff_6/in_1": "PLB.lutff_6/in[1]",
+        "lutff_6/in_2": "PLB.lutff_6/in[2]",
+        "lutff_6/in_3": "PLB.lutff_6/in[3]",
+
+        "lutff_7/in_0": "PLB.lutff_7/in[0]",
+        "lutff_7/in_1": "PLB.lutff_7/in[1]",
+        "lutff_7/in_2": "PLB.lutff_7/in[2]",
+        "lutff_7/in_3": "PLB.lutff_7/in[3]",
+
+        "lutff_0/out": "PLB.lutff_0/out[0]",
+        "lutff_1/out": "PLB.lutff_1/out[0]",
+        "lutff_2/out": "PLB.lutff_2/out[0]",
+        "lutff_3/out": "PLB.lutff_3/out[0]",
+        "lutff_4/out": "PLB.lutff_4/out[0]",
+        "lutff_5/out": "PLB.lutff_5/out[0]",
+        "lutff_6/out": "PLB.lutff_6/out[0]",
+        "lutff_7/out": "PLB.lutff_7/out[0]",
+
+        "lutff_global/cen": "PLB.lutff_global/cen[0]",
+        "lutff_global/s_r": "PLB.lutff_global/s_r[0]",
+        "lutff_global/clk": "PLB.lutff_global/clk[0]"
+        }
 
     for jj, ice_node in enumerate(create_tracks(nets)):
         nodes.append(ice_node)
@@ -260,12 +347,43 @@ def connect_tracks(graph, nets):
                 sink_node=ice_node.track_ids[connection[1]],
                 switch_id=graph.delayless_switch,
             )
+
+        # Check if we also need a link to a source/sink node
+        for pt in nets[ice_node.idx]:
+          overlap = set(pt.names).intersection(mapped_names.keys())
+          if len(overlap) > 0:
+            pos = (pt.x + 2, pt.y + 2)
+            nm = overlap.pop()
+            ss, pin_type = graph.get_nodes_for_pin(pos, mapped_names[nm])
+            node_id, side = ss[0]
+            assert (len(ss) == 1), "only 1 pin per name expected"
+
+            # TODO: use node in the same location instead of first
+
+            # connect based on direction
+            if pin_type == PinType.INPUT:
+                src = ice_node.track_ids[0]
+                sink = node_id
+            elif pin_type == PinType.OUTPUT:
+                sink = ice_node.track_ids[0]
+                src = node_id
+            else:
+                assert False, "Pin_Type {} should be input or output".format(pin_type)
+
+            graph.add_edge(
+                src_node=src,
+                sink_node=sink,
+                switch_id=graph.delayless_switch,
+            )
+
     return nodes
 
 def _find_track_by_position(node, pos):
     ids = []
+    x = pos.x + 2
+    y = pos.y + 2
     for ii, track in  enumerate(node.track_model.tracks):
-        if pos.x >= track.x_low and pos.x <= track.x_high and pos.y >= track.y_low and pos.y <= track.y_high:
+        if x >= track.x_low and x <= track.x_high and y >= track.y_low and y <= track.y_high:
             ids.append(node.track_ids[ii])
     return ids
 
@@ -303,8 +421,8 @@ def create_edges(graph, nets, switches, nodes):
         for bits, src in switch.switch_map.items():
             src_nodes = _find_track_by_position(nodes[src], pos)
             # assert len(dst_nodes) == 1 and len(src_nodes) == 1,\
-            #     "Expected only a single dst({}) and src({}) node".format(len(dst_nodes),
-            #                                                              len(src_nodes))
+            #      "Expected only a single dst({}) and src({}) node".format(len(dst_nodes),
+            #                                                               len(src_nodes))
 
             dst_node = dst_nodes[0]
             src_node = src_nodes[0]
@@ -314,7 +432,14 @@ def create_edges(graph, nets, switches, nodes):
             # TODO: get fasm feature "type_Xx_Yy.sw_type.dst.src"
             tile_type = "LOGIC"
 
-            feature_name = "{}_X{}_Y{}.{}.{}.{}".format(tile_type, pos.x, pos.y, switch.sw_type, dst_name, src_name)
+            if switch.sw_type == IceSwitchType.BUFFER:
+                sw = "buffer"
+            elif switch.sw_type == IceSwitchType.ROUTING:
+                sw = "routing"
+
+            entry = IceDbEntry(tile_type, (pos.x, pos.y), [], [sw, dst_name, src_name], 0)
+            feature_name = Feature.from_icedb_entry(entry).to_fasm_entry().feature
+            #feature_name = "{}_X{}_Y{}.{}.{}.{}".format(tile_type, pos.x, pos.y, sw, dst_name, src_name)
             switch_id = graph.get_switch_id("buffer")
             yield (
                 src_node, dst_node, switch_id,
