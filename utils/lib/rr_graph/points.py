@@ -1030,8 +1030,8 @@ def decompose_points_into_tracks(
     >>> pos = [(1, 0), (1, 1), (2, 1)]
     >>> ret = decompose_points_into_tracks(pos, right_top=True)
     >>> print_tracks(ret)
-    x = [1]
-    y = [1]
+    x = [2]
+    y = [0, 1]
 
     """
 

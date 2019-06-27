@@ -364,10 +364,11 @@ class Graph2MediumTests(unittest.TestCase):
         self.assertEqual(name, 'b0')
 
     def test_get_nodes_for_pin(self):
-        nodes = self.graph.get_nodes_for_pin((0, 0), 'p1')
+        nodes, ptype = self.graph.get_nodes_for_pin((0, 0), 'p1')
         self.assertEqual(nodes, [
             (0, Direction.LEFT),
         ])
+        self.assertEqual(ptype, PinType.INPUT)
 
         with self.assertRaises(KeyError):
             self.graph.get_nodes_for_pin((0, 0), 'd1')

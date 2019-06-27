@@ -213,7 +213,7 @@ def create_tracks(nets):
             conns, segs = points.decompose_into_straight_lines(net)
             tracks_model = Tracks(tracks_list, track_connections)
         else:
-            _, _, model = tracks.create_track(unique_pts, right_top=True)
+            _, _, model = tracks.create_track(unique_pts, right_only=True)
 
         if len(pts) < 2:
             node_class = NodeClassification.NULL
@@ -391,6 +391,8 @@ def _find_net_name(net, pos):
     nps = [xx for xx in net if xx.x == pos.x and xx.y == pos.y]
     if len(nps) != 1:
         print("Expected to find 1 net (found {}) at the position {}".format(len(nps), pos))
+
+    # TODO: don't just take the first
     return nps[0].names[0]
 
 def create_edges(graph, nets, switches, nodes):
@@ -436,6 +438,8 @@ def create_edges(graph, nets, switches, nodes):
                 sw = "buffer"
             elif switch.sw_type == IceSwitchType.ROUTING:
                 sw = "routing"
+
+            # TODO: alias to global name? Ignore certain names
 
             entry = IceDbEntry(tile_type, (pos.x, pos.y), [], [sw, dst_name, src_name], 0)
             feature_name = Feature.from_icedb_entry(entry).to_fasm_entry().feature

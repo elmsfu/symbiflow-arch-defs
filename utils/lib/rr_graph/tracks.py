@@ -67,6 +67,20 @@ def make_tracks(xs, ys, points, grid_width=None, grid_height=None):
     >>> print(connections)
     [(2, 0), (2, 1)]
 
+    >>> pos = [
+    ...         (3, 4),
+    ... (2, 3), (3, 3)]
+    >>> xs = [2, 3]
+    >>> ys = [4]
+    >>> tracks, connections = make_tracks(xs, ys, pos)
+    >>> print_tracks(tracks)
+    [Track(direction='Y', x_low=2, x_high=2, y_low=3, y_high=4),
+     Track(direction='Y', x_low=3, x_high=3, y_low=3, y_high=4),
+     Track(direction='X', x_low=2, x_high=3, y_low=4, y_high=4)]
+    >>> print(connections)
+    [(2, 0), (2, 1)]
+
+
 
     """
     x_set = set(xs)
